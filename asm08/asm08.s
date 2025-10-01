@@ -1,53 +1,43 @@
 section .bss
-outbuf resb 20   ; buffer pour stocker le résultat
+    buffer: resb 20
 
 section .text
         global _start
 
     _start:
-
-        mov rsi, [rsp]
         mov rax, [rsp+16]
-        mov rdx, [rsp+24]
 
-        cmp rsi, 2
-        jle no_param
-
-        ; convertir argv[1] → rax
+        ; convertir en int argv[1] → rax
         xor rax, rax
         xor rcx, rcx
         mov rsi, [rsp+16]
-        convert1:
+        convert:
             mov bl, [rsi+rcx]
             cmp bl, 0
-            je done1
+            je done
             sub bl, '0'
             imul rax, rax, 10
+            movzx rbx, bl
             add rax, rbx
             inc rcx
-            jmp convert1
-        done1:
+            jmp convert
+        done:
 
-        ; convertir argv[2] → rdx
-        xor rdx, rdx
-        xor rcx, rcx
-        mov rsi, [rsp+24]
-        convert2:
-            mov bl, [rsi+rcx]
-            cmp bl, 0
-            je done2
-            sub bl, '0'
-            imul rdx, rdx, 10
-            add rdx, rbx
-            inc rcx
-            jmp convert2
-        done2:
+    xor rcx, rcx
+    xor rbx, rbx
 
-        ; addition
-        add rax, rdx
-        mov rdi, rax
+    mov rbx, 0 ; contiendra le résultat
+    mov rcx, 1 ; compteur
 
-        lea rdi, [outbuf+19] ; on commence à la fin du buffer
+    sum:
+        add rbx, rcx
+        inc rcx
+        cmp rcx, rax
+        jne sum
+
+    mov rax, rbx
+
+        lea rdi, [buffer+19] ; on commence à la fin du buffer
         xor rcx, rcx          ; compteur de caractères
 
         convert_loop:
@@ -74,11 +64,5 @@ section .text
 
         ;exit 0
         mov rdi, 0
-        mov rax, 60
-        syscall
-
-    no_param:
-        ;exit 1
-        mov rdi, 1
         mov rax, 60
         syscall

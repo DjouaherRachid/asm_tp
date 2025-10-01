@@ -9,7 +9,11 @@ section .text
         global _start
 
     _start:
+        mov rsi, [rsp]
         mov rbx, [rsp+16]
+
+        cmp rsi,1
+        jle is_not_equal
 
         cmp word[rbx], '42'
         jne is_not_equal

@@ -5,7 +5,11 @@ section .text
         global _start
 
     _start:
+        mov rsi, [rsp]
         mov rbx, [rsp+16]
+
+        cmp rsi,1
+        jle no_param
 
         xor rcx, rcx ;rcx is the str length
 
@@ -30,5 +34,11 @@ section .text
 
         ;exit 0
         mov rdi, 0
+        mov rax, 60
+        syscall
+
+    no_param:
+        ;exit 1
+        mov rdi, 1
         mov rax, 60
         syscall
