@@ -5,7 +5,11 @@ section .text
         global _start
 
     _start:
+        mov rdi, [rsp]
         mov rax, [rsp+16]
+
+        cmp rdi, 1
+        jle no_param
 
         ; convertir en int argv[1] → rax
         xor rax, rax
@@ -25,6 +29,12 @@ section .text
 
     xor rcx, rcx
     xor rbx, rbx
+
+    ;cas particuliers
+    cmp rax, 1
+    je return_zero
+    cmp rax, 0
+    je return_zero
 
     mov rbx, 0 ; contiendra le résultat
     mov rcx, 1 ; compteur
@@ -55,6 +65,7 @@ section .text
         mov byte [rdi+rcx], 10
         inc rcx  
 
+        return_ok:
         ;write(stdout, *buffer, strlen)
         mov rax, 1           ; syscall write
         mov rsi, rdi         ; adresse du buffer
@@ -64,5 +75,18 @@ section .text
 
         ;exit 0
         mov rdi, 0
+        mov rax, 60
+        syscall
+
+        return_zero:
+        mov byte [buffer], '0' 
+        mov byte [buffer+1], 10 
+        mov rsi, buffer        
+        mov rcx, 2             
+        jmp return_ok
+
+        no_param:
+        ;exit 1
+        mov rdi, 1
         mov rax, 60
         syscall
