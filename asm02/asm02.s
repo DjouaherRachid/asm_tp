@@ -20,6 +20,12 @@ section .text
         cmp ax, '42'
         jne is_not_equal
 
+        cmp byte [buffer+2], 10   ; vérifier le '\n'
+        jne is_not_equal
+
+        cmp byte [buffer+3], 0    ; fin de chaîne
+        jne is_not_equal
+
         is_equal:
             ; write(1, msg, msglen)
             mov rsi, msg
