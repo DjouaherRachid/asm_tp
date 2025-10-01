@@ -2,6 +2,9 @@ section .data
     msg:    db '1337', 10
     msglen: equ $-msg
 
+section .bss
+    buffer: resb 64
+
 section .text
         global _start
 
@@ -9,6 +12,9 @@ section .text
         mov rbx, [rsp+16]
 
         cmp word[rbx], '42'
+        jne is_not_equal
+
+        cmp byte[rbx+2], 0    ; fin de chaîne
         jne is_not_equal
 
         is_equal:
