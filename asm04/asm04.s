@@ -63,7 +63,7 @@ section .text
             syscall
 
     not_digit:
-            ; exit(1)
+            ; exit(2)
             mov rdi, 2
             mov rax, 60
             syscall

@@ -12,6 +12,11 @@ section .text
         mov rax, 0
         syscall
 
+        cmp byte[buffer], '0'
+        jb not_digit
+        cmp byte[buffer], '9'
+        ja not_digit
+
         ; --- convertir buffer en entier ---
         xor rax, rax      ; rax = résultat (valeur finale)
         xor rcx, rcx      ; rcx = index dans buffer
@@ -42,7 +47,7 @@ section .text
 
     ;cas particuliers
     cmp rdi, 1
-    je is_prime
+    je not_prime
     cmp rdi, 2
     je is_prime
 
@@ -71,3 +76,9 @@ section .text
         mov rax, 60
         syscall
         end: 
+
+    not_digit:
+        ; exit(2)
+        mov rdi, 2
+        mov rax, 60
+        syscall
