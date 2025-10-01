@@ -23,6 +23,11 @@ section .text
             cmp bl, 0         ; fin de chaîne ?
             je end_convert
 
+            cmp bl, '0'            ; < '0' ?
+            jb not_digit
+            cmp bl, '9'            ; > '9' ?
+            ja not_digit
+
             sub bl, '0'       ; convertir '0'–'9' en 0–9
             cmp bl, 9
             ja end_convert    ; si ce n’est pas un chiffre, on arrête
@@ -54,6 +59,12 @@ section .text
         is_not_even:
             ; exit(1)
             mov rdi, 1
+            mov rax, 60
+            syscall
+
+    not_digit:
+            ; exit(1)
+            mov rdi, 2
             mov rax, 60
             syscall
 
