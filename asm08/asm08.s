@@ -81,8 +81,8 @@ section .text
         return_zero:
         mov byte [buffer], '0' 
         mov byte [buffer+1], 10 
-        mov rsi, buffer        
-        mov rcx, 2             
+        lea rdi, [buffer] ; on commence à la fin du buffer
+        mov rcx, 2     
         jmp return_ok
 
         no_param:
