@@ -1,139 +1,117 @@
 section .bss
 outbuf resb 20   ; buffer pour stocker le résultat
-neg_flag resb 1 ; savoir si le nombre est négatif ou pas
 
 section .text
-        global _start
+    global _start
 
-    _start:
+_start:
+    mov rsi, [rsp]        ; argc
+    cmp rsi, 3
+    jl no_param            ; si moins de 2 arguments, exit(1)
 
-        mov rsi, [rsp]
-        mov rax, [rsp+16]
-        mov rdx, [rsp+24]
+    mov rsi, [rsp+16]      ; argv[1]
+    call str_to_int
+    mov rax, rdi           ; rax = premier nombre
 
-        cmp rsi, 2
-        jle no_param
+    mov rsi, [rsp+24]      ; argv[2]
+    call str_to_int
+    add rax, rdi           ; rax = somme
 
-        ; convertir argv[1] → rax
-        xor rax, rax
-        xor rcx, rcx
-        mov rsi, [rsp+16]
-        convert1:
-            mov bl, [rsi+rcx]
-            cmp bl, 0
-            je done1
-            cmp bl, '-'
-            je is_negative1
-            sub bl, '0'
-            imul rax, rax, 10
-            add rax, rbx
-            inc rcx
-            jmp convert1
-        done1:
+    mov rdi, rax
+    lea rsi, [outbuf+19]   ; début de la conversion
+    call int_to_str         ; convertir et écrire
 
-        ;on regarde si argv[1] est négatif
-        cmp byte[neg_flag], 1
-        je arg1_negative
-        jmp continue1
+    ; exit(0)
+    mov rdi, 0
+    mov rax, 60
+    syscall
 
-        arg1_negative:
-            neg rax
+no_param:
+    mov rdi, 1
+    mov rax, 60
+    syscall
 
-        continue1:
-        mov byte[neg_flag],0
-        ; convertir argv[2] → rdx
-        xor rdx, rdx
-        xor rcx, rcx
-        mov rsi, [rsp+24]
-        convert2:
-            mov bl, [rsi+rcx]
-            cmp bl, 0
-            je done2
-            cmp bl, '-'
-            je is_negative2
-            sub bl, '0'
-            imul rdx, rdx, 10
-            add rdx, rbx
-            inc rcx
-            jmp convert2
-        done2:
+;---------------------------------------
+; Convertir une chaîne ASCII en entier
+; Entrée : rsi = adresse chaîne
+; Sortie : rdi = entier
+;---------------------------------------
+str_to_int:
+    xor rdi, rdi       ; résultat
+    xor rbx, rbx       ; temporaire pour chaque chiffre
+    xor rcx, rcx       ; index
+    xor rdx, rdx       ; flag négatif
 
-        ;on regarde si argv[2] est négatif
-        cmp byte[neg_flag], 1
-        je arg2_negative
-        jmp continue2
+str_loop:
+    mov bl, [rsi+rcx]
+    cmp bl, 0
+    je str_done
+    cmp bl, '-'
+    jne str_digit
+    inc rcx
+    mov dl, 1          ; nombre négatif
+    jmp str_loop
 
-        arg2_negative:
-            neg rdx
+str_digit:
+    sub bl, '0'
+    imul rdi, rdi, 10
+    add rdi, rbx
+    inc rcx
+    jmp str_loop
 
-        continue2:
-        ; addition
-        add rax, rdx
-        mov rdi, rax
+str_done:
+    cmp dl, 1
+    jne str_return
+    neg rdi
+str_return:
+    ret
 
-        lea rdi, [outbuf+19] ; on commence à la fin du buffer
-        xor rcx, rcx          ; compteur de caractères
+;---------------------------------------
+; Convertir un entier en chaîne ASCII et write
+; Entrée : rdi = entier
+;         rsi = pointe vers fin du buffer
+;---------------------------------------
+int_to_str:
+    xor rcx, rcx        ; compteur
+    mov rax, rdi
+    test rax, rax
+    jns int_positive
+    neg rax
+    mov byte [outbuf], '-' ; signe négatif
+    mov rbx, 1
+    jmp int_convert
 
-        ; vérifier si le nombre est négatif
-        mov rbx, rax
-        test rax, rax
-        jns positive_number
-        neg rax
-        mov byte [outbuf], '-'  ; mettre le signe au début
-        mov rsi, outbuf         ; début du buffer
-        jmp convert_number
+int_positive:
+    mov rbx, 0
 
-        positive_number:
-        mov rsi, outbuf         ; début du buffer
+int_convert:
+    xor rdx, rdx
+    mov r10, 10
+div_loop:
+    xor rdx, rdx
+    div r10
+    add dl, '0'
+    dec rsi
+    mov [rsi], dl
+    inc rcx
+    test rax, rax
+    jnz div_loop
 
-        convert_number:
-        convert_loop:
-            xor rdx, rdx
-            mov rbx, 10
-            idiv rbx               ; rax / 10 -> rax = quotient, rdx = reste
-            add dl, '0'           ; convertir le chiffre en ASCII
-            dec rdi
-            mov [rdi], dl
-            inc rcx
-            test rax, rax
-            jnz convert_loop
-        
-        ; si le nombre est négatif, ajouter le signe devant
-            cmp byte [outbuf], '-'
-            jne skip_sign
-            dec rdi
-            mov byte [rdi], '-' 
-            inc rcx
-        
-        skip_sign:
-        ; ajouter '\n' à la fin
-        mov byte [rdi+rcx], 10
-        inc rcx  
+    ; ajouter le signe si nécessaire
+    cmp rbx, 1
+    jne skip_sign
+    dec rsi
+    mov byte [rsi], '-'
+    inc rcx
+skip_sign:
 
-        ;write(stdout, *buffer, strlen)
-        mov rax, 1           ; syscall write
-        mov rsi, rdi         ; adresse du buffer
-        mov rdi, 1           ; stdout
-        mov rdx, rcx         ; longueur
-        syscall
+    ; ajouter '\n'
+    mov byte [rsi+rcx], 10
+    inc rcx
 
-        ;exit 0
-        mov rdi, 0
-        mov rax, 60
-        syscall
-
-    no_param:
-        ;exit 1
-        mov rdi, 1
-        mov rax, 60
-        syscall
-
-    is_negative1:
-        inc rcx
-        mov byte[neg_flag], 1
-        jmp convert1
-
-    is_negative2:
-        inc rcx
-        mov byte[neg_flag], 1
-        jmp convert2
+    ; write(stdout, buffer, length)
+    mov rax, 1
+    mov rdi, 1
+    mov rdx, rcx
+    syscall
+    ret
