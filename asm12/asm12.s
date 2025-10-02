@@ -45,13 +45,8 @@ section .text
     mov rdx, r8
     syscall
 
+no_input:
     ;exit 0
     mov rdi, 0
-    mov rax, 60
-    syscall
-
-no_input:
-    ;exit 1
-    mov rdi, 1
     mov rax, 60
     syscall
