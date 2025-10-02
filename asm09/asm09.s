@@ -1,83 +1,125 @@
 section .bss
-buffer resb 64        ; buffer pour l’affichage (suffisamment grand)
-
-section .text
+        result_buffer resb 65
+ 
+ section .data
+        newline db 10
+        hex_chars db "0123456789ABCDEF"
+        bin_flag db "-b", 0
+ 
+ section .text
         global _start
-
-_start:
-        ; récupérer argc et argv
-        mov rdi, [rsp]          ; argc
-        cmp rdi, 1
-        jle no_param            ; si pas d’argument → exit 1
-
-        mov rsi, [rsp+16]       ; argv[1] (pointeur sur chaîne)
+ 
+ _start:
+        mov r12, 16
+        mov r13, [rsp+16]
         
-        ; convertir argv[1] (ASCII décimal) → entier dans rdi
-        xor rdi, rdi            ; résultat = 0
-        xor rcx, rcx            ; index = 0
-convert_ascii_to_dec:
-        mov bl, [rsi+rcx]       ; lire caractère
-        cmp bl, 0
-        je convert_done         ; fin de chaîne
-
-        cmp bl, '0'
-        jb not_digit
-        cmp bl, '9'
-        ja not_digit
-
-        sub bl, '0'
-        imul rdi, rdi, 10
-        movzx rbx, bl
-        add rdi, rbx
-        inc rcx
-        jmp convert_ascii_to_dec
-
-convert_done:
-        ; rdi contient le nombre entier
-        mov rax, rdi
-
-        ; préparer la conversion en hexadécimal
-        mov rcx, 16             ; 16 nibbles (64 bits)
-        lea rsi, [buffer+32]    ; pointeur fin du buffer
-        mov byte [rsi], 0       ; fin de chaîne C
-        dec rsi
-
-hex_loop:
-        mov rbx, rax
-        and rbx, 0xF            ; extraire 4 bits
-        cmp rbx, 9
-        jbe hex_digit
-        add rbx, 'A' - 10
-        jmp hex_store
-hex_digit:
-        add rbx, '0'
-hex_store:
-        mov byte [rsi], bl
-        dec rsi
-        shr rax, 4
-        loop hex_loop
-
-        inc rsi                 ; corriger pour pointer sur 1er caractère
-
-        ; écrire sur stdout
-        mov rax, 1              ; syscall write
-        mov rdi, 1              ; fd=stdout
-        mov rdx, 32             ; longueur max affichée
+        cmp qword [rsp], 3
+        jne .check_arg_count
+        mov rdi, [rsp+16]
+        mov rsi, bin_flag
+        call string_compare
+        cmp rax, 0
+        jne .check_arg_count
+        
+        mov r12, 2
+        mov r13, [rsp+24]
+        
+.check_arg_count:
+        cmp qword [rsp], 2
+        jl exit_failure
+        
+        mov rsi, r13
+        call ascii_to_int
+        
+        mov rdi, result_buffer
+        mov rsi, r12
+        call int_to_base_ascii
+        
+        mov rdx, rax
+        mov rax, 1
+        mov rdi, 1
+        mov rsi, result_buffer
         syscall
-
-        ; exit 0
+        
+        mov rax, 1
+        mov rdi, 1
+        mov rsi, newline
+        mov rdx, 1
+        syscall
+        
+exit_success:
         mov rax, 60
         xor rdi, rdi
         syscall
-
-no_param:
-        ; exit 1
+        
+exit_failure:
         mov rax, 60
         mov rdi, 1
         syscall
-
-not_digit:
-        ; exit 2
-        mov rax, 60
-        mov rdi, 2
-        syscall
+        
+string_compare:
+        push rsi
+        push rdi
+        .loop:
+        mov al, [rdi]
+        mov ah, [rsi]
+        cmp al, ah
+        jne .notequal
+        cmp al, 0
+        je .equal
+        inc rsi
+        inc rdi
+        jmp .loop
+        .equal:
+        pop rdi
+        pop rsi
+        xor rax, rax
+        ret
+.notequal:
+        pop rdi
+        pop rsi
+        mov rax, 1
+        ret
+        
+ascii_to_int:
+        xor rax, rax
+        xor rbx, rbx
+        .loop:
+        mov bl, [rsi]
+        cmp bl, 0
+        je .done
+        sub bl, '0'
+        imul rax, 10
+        add rax, rbx
+        inc rsi
+        jmp .loop
+        .done:
+        ret
+        
+int_to_base_ascii:
+        mov r8, rdi
+        mov r9, rsi
+        add rdi, 64
+        mov byte [rdi], 0
+        dec rdi
+        .loop:
+        xor rdx, rdx
+        div r9
+        lea r10, [hex_chars]
+        mov r10b, [r10+rdx]
+        mov [rdi], r10b
+        dec rdi
+        test rax, rax
+        jnz .loop
+        
+        inc rdi
+        mov rdx, r8
+        add rdx, 65
+        sub rdx, rdi
+        mov rax, rdx
+        
+        mov rcx, rax
+        mov rsi, rdi
+        mov rdi, r8
+        rep movsb
+        ret
