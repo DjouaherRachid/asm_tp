@@ -1,21 +1,22 @@
 section .bss
-    buffer resb 10
+    buffer resb 8
 
 section .text
         global _start
 
     _start:
-        mov rsi, [rsp]
-        mov rbx, [rsp+16]
-
-        cmp rsi,1
-        jle no_param
+        ; read(0, buffer, 64)
+        mov rsi, buffer
+        mov rdi, 0
+        mov rdx, 64
+        mov rax, 0
+        syscall
 
         xor rcx, rcx ;rcx is the str length
         xor rdi, rdi ;rdi is the number of vowels
 
         strlen_loop:
-        mov al, byte[rbx+rcx]
+        mov al, byte[buffer+rcx]
         cmp al, 0
         je strlen_done
 
@@ -40,6 +41,8 @@ section .text
 
     xor rcx, rcx
     xor rdx, rdx
+    mov qword[buffer], ''
+
     int_to_str: ;rax dividende, rcx est le diviseur, rdx reste, rdi nombre de voyelles en int
         mov rax, rdi 
         mov rcx, 10
@@ -60,12 +63,7 @@ section .text
     mov rdi, 0
     mov rax, 60
     syscall
-
-    no_param:
-        ;exit 1
-        mov rdi, 1
-        mov rax, 60
-        syscall
+    ret
 
     increase_vowel_number:
         inc rdi
