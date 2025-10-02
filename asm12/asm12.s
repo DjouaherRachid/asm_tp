@@ -13,6 +13,9 @@ section .text
     mov rax, 0
     syscall
 
+    cmp rdi, ''
+    je no_input
+
     mov r8, rax   ; longueur lue
 
     lea rsi,[buffer]
@@ -44,6 +47,13 @@ section .text
 
     ;exit 0
     mov rdi, 0
+    mov rax, 60
+    syscall
+    ret
+
+no_input:
+    ;exit 1
+    mov rdi, 1
     mov rax, 60
     syscall
     ret
