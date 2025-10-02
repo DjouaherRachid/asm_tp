@@ -4,7 +4,7 @@ section .bss
 
 section .text
     global _start
-
+    
     _start:
     ; read(0, buffer, 64)
     mov rsi, buffer
@@ -13,7 +13,7 @@ section .text
     mov rax, 0
     syscall
 
-    cmp rdi, ''
+    cmp byte[buffer],10
     je no_input
 
     mov r8, rax   ; longueur lue
@@ -49,11 +49,9 @@ section .text
     mov rdi, 0
     mov rax, 60
     syscall
-    ret
 
 no_input:
     ;exit 1
     mov rdi, 1
     mov rax, 60
     syscall
-    ret
