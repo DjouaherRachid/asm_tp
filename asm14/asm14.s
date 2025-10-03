@@ -2,9 +2,6 @@ section .rodata
     msg:    db 'Hello Universe!', 64
     msglen: equ $-msg-1
 
-section .bss
-    buffer resb 64
-
 section .text
     global _start
 
