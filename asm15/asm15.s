@@ -25,7 +25,7 @@ section .text
     syscall
 
     cmp rax, 4
-    jb  wesh               ; moins de 4 octets lus -> pas un ELF valide
+    jb  incorrect_length               ; moins de 4 octets lus -> pas un ELF valide
 
     ;compare buffer to '0x7F E L F'
     mov al, byte[buffer]
@@ -51,16 +51,8 @@ section .text
     syscall
 
     no_filename:
-    mov rdi, 3
-    mov rax, 60
-    syscall
-
     not_elf:
+    incorrect_length:
     mov rdi, 1
-    mov rax, 60
-    syscall
-
-    wesh:
-    mov rdi, 2
     mov rax, 60
     syscall
