@@ -27,6 +27,8 @@ _start:
     syscall
     cmp rax, 0
     js  open_failed
+    cmp rax, 0
+    jl open_failed
     mov r12, rax          ; sauvegarde fd
 
     ; read(fd, buffer, sizeof buffer)
@@ -89,7 +91,7 @@ found:
 
 after_search:
     cmp rax, 0
-    je  nothing_to_do      ; pas trouvé -> quitter normalement
+    je  not_found      ; pas trouvé -> erreur
 
     ; repositionner au début du fichier (lseek(fd, 0, SEEK_SET))
     mov rax, 8             ; syscall: lseek (x86_64 classic mapping)
@@ -116,21 +118,12 @@ after_search:
     syscall
 
 no_filename:
+open_failed:
+read_failed:
+not_found:
     ; exit(1)
     mov rax, 60
     mov rdi, 1
-    syscall
-
-open_failed:
-    ; exit(2)
-    mov rax, 60
-    mov rdi, 2
-    syscall
-
-read_failed:
-    ; exit(3)
-    mov rax, 60
-    mov rdi, 3
     syscall
 
 nothing_to_do:
