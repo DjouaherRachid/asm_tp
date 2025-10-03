@@ -22,26 +22,28 @@ _start:
     cmp byte[rsi], 10
     je exit_1
 
-    mov rdi, rax               ; longueur du buffer lue
+    mov r9, rax                ; sauvegarder longueur du buffer lue
     lea rsi, [buffer]          ; source
     lea r8, [buffer_caesar]    ; destination
 
     ; convertir argv[1] en entier
+    mov rdi, r13               ; passer argv[1] à str_to_int
     call str_to_int
-    mov rdx, rdi               ; clé dans rdi → rdx
+    mov r10, rdi               ; clé entière
+
 
     ; réduire clé modulo 26
-    mov rax, rdx
-    mov rcx, 26
+    mov rax, r10
     xor rdx, rdx
+    mov rcx, 26
     div rcx
-    mov dl, dl                 ; décalage final (dans dl)
+    mov r11b, dl               ; décalage final
 
     ; boucler
     xor rcx, rcx
 
 caesar_loop:
-    cmp rcx, rdi
+    cmp rcx, r9                
     jge caesar_done
 
     mov al, [rsi + rcx]
